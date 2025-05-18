@@ -28,9 +28,9 @@ class Gardener:
         while True:
             wilted_flowers = [f for f in self.flowers if f.is_wilted]
             if wilted_flowers:
-                flower_to_water = random.choice(wilted_flowers)  # Выбираем случайный увядший цветок
+                flower_to_water = random.choice(wilted_flowers)
                 flower_to_water.water(self.id)
-            time.sleep(random.uniform(0.5, 2)) # Садовник работает с перерывами
+            time.sleep(random.uniform(0.5, 2))
 
 
 def main(num_flowers, num_gardeners):
@@ -43,13 +43,12 @@ def main(num_flowers, num_gardeners):
         threads.append(thread)
         thread.start()
 
-    # Симуляция увядания цветов (можно сделать более сложной)
     n = 0
     while True:
         print(f"Iteration {n}")
         n += 1
         for flower in flowers:
-            if random.random() < 0.1: # 10% шанс увядания за итерацию
+            if random.random() < 0.1:
                 flower.wilt()
         time.sleep(1)
 
