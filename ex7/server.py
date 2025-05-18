@@ -20,8 +20,8 @@ def handle_client(conn, addr):
 
 
 def start_server():
-    HOST = "127.0.0.1"  # Стандартный loopback interface address (localhost)
-    PORT = 65432  # Порт
+    HOST = "127.0.0.1"
+    PORT = 65432
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((HOST, PORT))
