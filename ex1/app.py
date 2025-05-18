@@ -3,36 +3,40 @@ def calc(expr):
     try:
         parts = expr.split()
         if len(parts) != 3:
-            raise ValueError("Некорректный формат выражения. Требуется 'число оператор число'")
+            raise ValueError(
+                "Некорректный формат выражения. Требуется 'число оператор число'"
+            )
 
         num_left = float(parts[0])
         operator = parts[1]
         num_right = float(parts[2])
 
-        if operator == '+':
+        if operator == "+":
             res = num_left + num_right
-        elif operator == '-':
+        elif operator == "-":
             res = num_left - num_right
-        elif operator == '*':
+        elif operator == "*":
             res = num_left * num_right
-        elif operator == '/':
+        elif operator == "/":
             if num_right == 0:
                 raise ZeroDivisionError("Деление на ноль")
             res = num_left / num_right
-        elif operator == '<':
+        elif operator == "<":
             res = num_left < num_right
-        elif operator == '>':
+        elif operator == ">":
             res = num_left > num_right
-        elif operator == '<=':
+        elif operator == "<=":
             res = num_left <= num_right
-        elif operator == '>=':
+        elif operator == ">=":
             res = num_left >= num_right
-        elif operator == '!=':
+        elif operator == "!=":
             res = num_left != num_right
-        elif operator == '==':
+        elif operator == "==":
             res = num_left == num_right
         else:
-            raise ValueError("Неизвестный оператор. Допустимы: +, -, *, /, <, >, <=, >=, !=, ==")
+            raise ValueError(
+                "Неизвестный оператор. Допустимы: +, -, *, /, <, >, <=, >=, !=, =="
+            )
 
         return res
 
@@ -45,8 +49,10 @@ def calc(expr):
 
 
 while True:
-    expr = input("Введите арифметическое или логическое выражение (например, 10 + 5) или 'q' для выхода: ")
-    if expr.lower() == 'q':
+    expr = input(
+        "Введите арифметическое или логическое выражение (например, 10 + 5) или 'q' для выхода: "
+    )
+    if expr.lower() == "q":
         break
     res = calc(expr)
     print(f"Результат: {res}")
