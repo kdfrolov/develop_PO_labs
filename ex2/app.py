@@ -1,119 +1,137 @@
-import abc
 import math
-
-class Expression(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def evaluate(self):
-        pass
-
-class ArithmeticExpression(Expression):
-    def __init__(self, expression_str):
-        self.expression_str = expression_str
-
-    def evaluate(self):
-        try:
-            parts = self.expression_str.split()
-
-            num_left = float(parts[0])
-            operator = parts[1]
-            num_right = float(parts[2])
-
-            if operator == '+':
-                res = num_left + num_right
-            elif operator == '-':
-                res = num_left - num_right
-            elif operator == '*':
-                res = num_left * num_right
-            elif operator == '/':
-                if num_right == 0:
-                    raise ZeroDivisionError("Деление на ноль")
-                res = num_left / num_right
-            elif operator == '<':
-                res = num_left < num_right
-            elif operator == '>':
-                res = num_left > num_right
-            elif operator == '<=':
-                res = num_left <= num_right
-            elif operator == '>=':
-                res = num_left >= num_right
-            elif operator == '!=':
-                res = num_left != num_right
-            elif operator == '==':
-                res = num_left == num_right
-            else:
-                raise ValueError("Неизвестный оператор. Допустимы: +, -, *, /, <, >, <=, >=, !=, ==")
-
-            return res
-            except ValueError as e:
-                return f"Ошибка: {e}"
-            except ZeroDivisionError as e:
-                return f"Ошибка: {e}"
-            except Exception as e:
-                return f"Непредвиденная ошибка: {e}"
-        
-        # Здесь можно использовать более безопасный способ вычисления, чем eval()
-        # Например, библиотеку ast.literal_eval или специализированный парсер
-        code = compile(self.expression_str, '<string>', 'eval')
-        try:
-            result = eval(code, {"__builtins__": {}}, {**math.__dict__})
-            return result
-        except (ValueError, TypeError, NameError) as e:
-            raise ValueError(f"Evaluation error: {e}")
+import re
 
 
-class AssignmentExpression(Expression):
-    def __init__(self, var_name, expression):
-        self.var_name = var_name
-        self.expression = expression
-
-    def evaluate(self):
-        value = self.expression.evaluate()
-        # Здесь можно добавить обработку ошибок присваивания
-        return f"{self.var_name} = {value}"
+# Абстрактный класс
+class Expression:
+    def calculate(self, variables):
+        raise NotImplementedError
 
 
-class ExpressionEvaluator:
-    def __init__(self):
-        self.variables = {}
+# Класс для бинарных операций
+class BinaryOperation(Expression):
+    def __init__(self, num_left, operator, num_right):
+        self.num_left = num_left
+        self.operator = operator
+        self.num_right = num_right
 
-    def evaluate(self, expression_str):
-        expressions = expression_str.split(';')
-        results = []
-        for expr_str in expressions:
-            expr_str = expr_str.strip()
-            if not expr_str:
-                continue
-            try:
-                expression = self._parse_expression(expr_str)
-                result = expression.evaluate()
-                results.append(result)
-            except (ValueError, SyntaxError) as e:
-                return f"Error: {e}"
-        return "\n".join(map(str, results))
-
-
-    def _parse_expression(self, expression_str):
-        """Разбирает строку и создает соответствующий объект выражения."""
-        if '=' in expression_str:
-            var_name, value_expr = expression_str.split('=', 1)
-            var_name = var_name.strip()
-            value_expression = self._parse_expression(value_expr.strip())
-            return AssignmentExpression(var_name, value_expression)
+    def calculate(self, variables):
+        l = self.num_left.calculate(variables)
+        r = self.num_right.calculate(variables)
+        if self.operator == "+":
+            return l + r
+        elif self.operator == "*":
+            return l * r
+        elif self.operator == "/":
+            return l / r
+        elif self.operator == "-":
+            return l - r
         else:
-            return ArithmeticExpression(expression_str)
+            raise Exception(f"Неподдерживаемый оператор {self.op}")
 
 
+# Класс для переменных
+class Variable(Expression):
+    def __init__(self, name):
+        self.name = name
 
-# Пример использования
-evaluator = ExpressionEvaluator()
-expression = "x = 10; y = 20; z = x + y; a = pow(2, 3)"
-result = evaluator.evaluate(expression)
-print(result)
+    def calculate(self, variables):
+        if self.name in variables:
+            return variables[self.name]
+        else:
+            raise Exception(f"Переменная {self.name} не определена")
 
-# expression2 = "x = 10; y = x + 5; z = (x + y) 3"
-# result2 = evaluator.evaluate(expression2)
-# print(result2)
 
-# expression3 = "x = 10; y = 0; z = x / y"  #Ошибка
-# result3 = evaluator.evaluate(expression3)
-# print(result3)
+# Класс для операций присваивания
+class Assignment(Expression):
+    def __init__(self, var, expr):
+        self.var = var
+        self.expr = expr
+
+    def calculate(self, variables):
+        value = self.expr.calculate(variables)
+        variables[self.var.name] = value
+        return value
+
+
+# Класс для функций
+class Function(Expression):
+    def __init__(self, name, arg):
+        self.name = name
+        self.arg = arg
+
+    def calculate(self, variables):
+        arg_val = self.arg.calculate(variables)
+        if self.name == "sin":
+            return math.sin(arg_val)
+        elif self.name == "log":
+            return math.log(arg_val)
+        elif self.name == "sqrt":
+            return math.sqrt(arg_val)
+        elif self.name == "abs":
+            return abs(arg_val)
+        elif self.name == "pow":
+            if isinstance(self.arg, BinaryOperation):
+                l = self.arg.num_left.calculate(variables)
+                r = self.arg.num_right.calculate(variables)
+                return math.pow(l, r)
+            else:
+                raise Exception("Для pow требуется 2 аргумента")
+        else:
+            raise Exception(f"Неизвестная функция {self.name}")
+
+
+# Класс для числовых значений
+class Number(Expression):
+    def __init__(self, value):
+        self.value = value
+
+    def calculate(self, variables):
+        return self.value
+
+
+# Парсер выражений
+def parser(expr):
+    expr = expr.strip()
+    if "=" in expr:
+        var, val = expr.split("=", 1)
+        return Assignment(Variable(var.strip()), parser(val.strip()))
+
+    for op in ["+", "*", "/", "-"]:
+        if op in expr:
+            num_left, num_right = expr.split(op, 1)
+            return BinaryOperation(
+                parser(num_left.strip()), op, parser(num_right.strip())
+            )
+
+    if "(" in expr and expr.endswith(")"):
+        fname, arg = expr.split("(", 1)
+        arg = arg[:-1]
+        return Function(fname.strip(), parser(arg.strip()))
+
+    if re.match(r"^[a-zA-Z_]\w*$", expr):
+        return Variable(expr)
+    try:
+        return Number(float(expr))
+    except ValueError:
+        raise Exception(f"Не удается произвести парсинг: {expr}")
+
+
+def main():
+    vars = {}
+    try:
+        inputs = input("Введите выражения: ")
+        statements = inputs.split(";")
+        for i in statements:
+            if i.strip():
+                expr = parser(i)
+                expr.calculate(vars)
+        print("Переменные и значения:")
+        for x, y in vars.items():
+            print(f"{x} = {y}")
+    except Exception as e:
+        print(f"Ошибка: {e}")
+
+
+if __name__ == "__main__":
+    main()
